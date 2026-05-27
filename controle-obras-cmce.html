@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Obras CMCE | Confiance Medical</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --primary: #0D1B3E;
+    --primary-light: #162850;
+    --accent: #4DD5E5;
+    --accent-light: #E8F9FC;
+    --success: #1AA053;
+    --success-bg: #E8F5EE;
+    --warning: #E67E00;
+    --warning-bg: #FFF3E0;
+    --danger: #C0392B;
+    --danger-bg: #FDECEA;
+    --gray-50: #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-300: #CBD5E1;
+    --gray-400: #94A3B8;
+    --gray-500: #64748B;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1E293B;
+    --white: #FFFFFF;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-50); color: var(--gray-800); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #080F22 0%, #0D1B3E 60%, #133050 100%);
+    color: white; padding: 0 28px; height: 72px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.45); position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(77,213,229,0.15);
+  }
+  .header-brand { display: flex; align-items: center; gap: 14px; }
+  .logo-mark { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-mark svg { width: 48px; height: 48px; }
+  .brand-text h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; }
+  .brand-text p { font-size: 12px; opacity: 0.75; font-weight: 400; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  /* ── BUTTONS ── */
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.18s ease; text-decoration: none; }
+  .btn-primary { background: var(--accent); color: #0D1B3E; font-weight: 700; }
+  .btn-primary:hover { background: #6ADDED; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(77,213,229,0.45); }
+  .btn-outline { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.3); }
+  .btn-outline:hover { background: rgba(255,255,255,0.2); }
+  .btn-ghost { background: transparent; color: var(--gray-600); padding: 8px 14px; }
+  .btn-ghost:hover { background: var(--gray-100); color: var(--primary); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #A93226; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn-icon { padding: 8px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 1400px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .kpi-card { background: white; border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); display: flex; align-items: center; gap: 16px; transition: box-shadow 0.18s; }
+  .kpi-card:hover { box-shadow: var(--shadow-md); }
+  .kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 22px; }
+  .kpi-icon.blue { background: var(--accent-light); color: #0D6E7A; }
+  .kpi-icon.green { background: var(--success-bg); color: var(--success); }
+  .kpi-icon.orange { background: var(--warning-bg); color: var(--warning); }
+  .kpi-icon.purple { background: #F0EEFF; color: #6C3FC5; }
+  .kpi-icon.red { background: var(--danger-bg); color: var(--danger); }
+  .kpi-content { flex: 1; }
+  .kpi-label { font-size: 12px; font-weight: 500; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: var(--gray-800); letter-spacing: -0.5px; }
+  .kpi-sub { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+
+  /* ── FILTERS ── */
+  .filters-bar { background: white; border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm); display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 160px; flex: 1; }
+  .filter-group label { font-size: 12px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
+  .input, select, textarea { padding: 9px 12px; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-size: 14px; color: var(--gray-800); background: white; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; width: 100%; }
+  .input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(77,213,229,0.2); }
+  select { cursor: pointer; }
+  .search-wrap { position: relative; flex: 2; min-width: 220px; }
+  .search-wrap .input { padding-left: 38px; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--gray-400); pointer-events: none; }
+
+  /* ── TABLE ── */
+  .table-card { background: white; border-radius: var(--radius); border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); overflow: hidden; }
+  .table-header { padding: 18px 22px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; gap: 12px; background: white; }
+  .table-title { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+  .table-count { font-size: 13px; color: var(--gray-400); font-weight: 400; margin-left: 8px; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  thead { background: var(--gray-50); }
+  th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 700; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; border-bottom: 1px solid var(--gray-200); cursor: pointer; user-select: none; }
+  th:hover { color: var(--primary); background: var(--gray-100); }
+  td { padding: 13px 16px; font-size: 14px; color: var(--gray-700); border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+  tr:hover td { background: var(--accent-light); }
+  tr:last-child td { border-bottom: none; }
+  .fornecedor-name { font-weight: 600; color: var(--gray-800); max-width: 200px; }
+  .fornecedor-sub { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+  .obs-cell { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; color: var(--gray-600); font-size: 13px; }
+  .obs-cell:hover { color: var(--primary); }
+  .valor { font-weight: 700; color: var(--gray-800); white-space: nowrap; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .badge-servico { background: #E0F8FB; color: #0D6E7A; }
+  .badge-produto { background: #F0EEFF; color: #6C3FC5; }
+  .badge-pago { background: var(--success-bg); color: var(--success); }
+  .badge-parcial { background: var(--warning-bg); color: var(--warning); }
+  .badge-pendente { background: var(--danger-bg); color: var(--danger); }
+  .badge-orcamento { background: var(--gray-100); color: var(--gray-500); }
+  .oc-number { font-size: 13px; color: var(--gray-500); font-weight: 500; }
+  .date-cell { font-size: 13px; color: var(--gray-500); white-space: nowrap; }
+  .actions-cell { display: flex; gap: 6px; }
+  .btn-row { width: 32px; height: 32px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-size: 14px; }
+  .btn-row.edit { background: var(--accent-light); color: #0D6E7A; }
+  .btn-row.edit:hover { background: var(--accent); color: white; }
+  .btn-row.del { background: var(--danger-bg); color: var(--danger); }
+  .btn-row.del:hover { background: var(--danger); color: white; }
+  .btn-row.attach { background: var(--success-bg); color: var(--success); position: relative; }
+  .btn-row.attach:hover { background: var(--success); color: white; }
+  .attach-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; position: absolute; top: 4px; right: 4px; border: 2px solid white; }
+  .totals-row td { font-weight: 700; background: var(--gray-50); border-top: 2px solid var(--gray-300); color: var(--gray-800); }
+
+  /* ── CHARTS ── */
+  .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: white; border-radius: var(--radius); border: 1px solid var(--gray-200); padding: 20px; box-shadow: var(--shadow-sm); }
+  .chart-title { font-size: 14px; font-weight: 700; color: var(--gray-700); margin-bottom: 16px; }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-size: 12px; color: var(--gray-600); width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #1A4A72, #4DD5E5); transition: width 0.6s ease; }
+  .bar-val { font-size: 12px; font-weight: 600; color: var(--gray-700); width: 90px; text-align: right; flex-shrink: 0; }
+  .pie-row { display: flex; gap: 16px; align-items: center; justify-content: center; }
+  .pie-legend { display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-600); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── PAGINATION ── */
+  .pagination { padding: 14px 20px; border-top: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: var(--gray-50); }
+  .page-info { font-size: 13px; color: var(--gray-500); }
+  .page-btns { display: flex; gap: 6px; }
+  .page-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--gray-200); background: white; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--gray-600); display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .page-btn:hover { border-color: var(--accent); color: #0D6E7A; }
+  .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: white; border-radius: 16px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); transform: scale(0.96) translateY(8px); transition: transform 0.22s ease; }
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+  .modal-header { padding: 22px 26px 18px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--gray-800); }
+  .close-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--gray-100); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--gray-500); font-size: 18px; transition: all 0.15s; }
+  .close-btn:hover { background: var(--gray-200); color: var(--gray-800); }
+  .modal-body { padding: 24px 26px; }
+  .modal-footer { padding: 18px 26px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 10px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .full { grid-column: 1/-1; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 13px; font-weight: 600; color: var(--gray-600); }
+  .required { color: var(--danger); }
+  textarea { min-height: 80px; resize: vertical; }
+
+  /* ── STATUS SELECT ── */
+  .status-select { padding: 4px 22px 4px 8px; border-radius: 20px; border: 1px solid; font-size: 12px; font-weight: 600; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394A3B8'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+
+  /* ── ATTACH ── */
+  .attach-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+  .attach-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); }
+  .attach-icon { font-size: 24px; flex-shrink: 0; }
+  .attach-name { font-size: 14px; font-weight: 600; color: var(--gray-700); }
+  .attach-date { font-size: 12px; color: var(--gray-400); }
+  .attach-remove { margin-left: auto; }
+  .upload-area { border: 2px dashed var(--gray-300); border-radius: var(--radius-sm); padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.15s; margin-top: 16px; color: var(--gray-400); }
+  .upload-area:hover { border-color: var(--accent); color: #0D6E7A; background: var(--accent-light); }
+  .upload-area .upload-icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-area p { font-size: 14px; font-weight: 500; }
+  #fileInput { display: none; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+  .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+
+  /* ── LOADING OVERLAY ── */
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(8,15,34,0.7);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9000; backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .loading-overlay.visible { opacity: 1; pointer-events: all; }
+  .spinner {
+    width: 56px; height: 56px;
+    border: 4px solid rgba(77,213,229,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.85s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-overlay p { color: white; font-size: 15px; font-weight: 500; opacity: 0.85; }
+
+  /* ── SETUP SCREEN ── */
+  .setup-screen {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #080F22 0%, #0D1B3E 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 8000; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .setup-screen.visible { opacity: 1; pointer-events: all; }
+  .setup-card {
+    background: white; border-radius: 20px; padding: 40px 44px;
+    width: 100%; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .setup-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .setup-logo svg { width: 56px; height: 56px; }
+  .setup-logo-text h2 { font-size: 20px; font-weight: 800; color: var(--primary); }
+  .setup-logo-text p { font-size: 13px; color: var(--gray-500); }
+  .setup-title { font-size: 22px; font-weight: 800; color: var(--gray-800); margin-bottom: 6px; }
+  .setup-subtitle { font-size: 14px; color: var(--gray-500); line-height: 1.6; margin-bottom: 28px; }
+  .setup-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .setup-field label { font-size: 13px; font-weight: 700; color: var(--gray-700); }
+  .setup-field .hint { font-size: 12px; color: var(--gray-400); }
+  .setup-steps { background: var(--gray-50); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 24px; border-left: 3px solid var(--accent); }
+  .setup-steps p { font-size: 13px; color: var(--gray-600); line-height: 1.8; }
+  .setup-steps a { color: #0D6E7A; font-weight: 600; }
+  .setup-error { background: var(--danger-bg); color: var(--danger); padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; margin-bottom: 16px; display: none; }
+  .setup-error.visible { display: block; }
+
+  /* ── IMPORT BANNER ── */
+  .import-banner {
+    background: linear-gradient(135deg, #0D1B3E, #133050);
+    color: white; border-radius: var(--radius); padding: 20px 24px;
+    margin-bottom: 24px; display: flex; align-items: center;
+    justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    box-shadow: var(--shadow-md);
+  }
+  .import-banner p { font-size: 15px; font-weight: 600; }
+  .import-banner small { font-size: 13px; opacity: 0.7; }
+
+  /* ── TOAST ── */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast { background: var(--gray-800); color: white; padding: 13px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease; max-width: 320px; }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ── DB INDICATOR ── */
+  .db-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,0.6); }
+  .db-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+  .db-dot.offline { background: var(--danger); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  mark { background: #FFF176; border-radius: 2px; padding: 0 2px; }
+
+  @media print {
+    header, .filters-bar, .actions-cell, .header-actions, .pagination, .charts-row, .import-banner { display: none !important; }
+    body { background: white; }
+    .table-card { box-shadow: none; border: none; }
+  }
+  @media (max-width: 768px) {
+    header { padding: 0 16px; }
+    .page { padding: 16px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .setup-card { padding: 28px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p id="loadingMsg">Carregando dados...</p>
+</div>
+
+<!-- SETUP SCREEN -->
+<div class="setup-screen" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sg" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0D1B3E"/><stop offset="45%" stop-color="#1A4A72"/>
+            <stop offset="80%" stop-color="#1E7A8C"/><stop offset="100%" stop-color="#2BA8B8"/>
+          </linearGradient>
+        </defs>
+        <path d="M 50 8 A 42 42 0 1 0 92 58 A 42 42 0 0 0 78 22" stroke="url(#sg)" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M 78 22 A 42 42 0 0 1 92 58" stroke="#4DD5E5" stroke-width="16" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="setup-logo-text">
+        <h2>Confiance Medical</h2>
+        <p>Controle de Obras · CMCE</p>
+      </div>
+    </div>
+    <h3 class="setup-title">Conectar ao Banco de Dados</h3>
+    <p class="setup-subtitle">Insira as credenciais do seu projeto Supabase para salvar e sincronizar os dados online.</p>
+    <div class="setup-steps">
+      <p>
+        1. Acesse <a href="https://supabase.com" target="_blank">supabase.com</a> e crie um projeto gratuito<br>
+        2. No painel do projeto, vá em <strong>Settings → API</strong><br>
+        3. Copie a <strong>Project URL</strong> e a <strong>anon public key</strong><br>
+        4. Cole abaixo e clique em Conectar
+      </p>
+    </div>
+    <div class="setup-error" id="setupError"></div>
+    <div class="setup-field">
+      <label>Project URL</label>
+      <input type="text" id="sbUrl" class="input" placeholder="https://xxxxxxxxxxx.supabase.co">
+      <span class="hint">Settings → API → Project URL</span>
+    </div>
+    <div class="setup-field">
+      <label>Anon Public Key</label>
+      <input type="text" id="sbKey" class="input" placeholder="eyJhbGci...">
+      <span class="hint">Settings → API → Project API keys → anon public</span>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;padding:13px" onclick="connectSupabase()">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Conectar
+    </button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    <div class="logo-mark">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="ringGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#0D1B3E"/><stop offset="45%" stop-color="#1A4A72"/>
+            <stop offset="80%" stop-color="#1E7A8C"/><stop offset="100%" stop-color="#2BA8B8"/>
+          </linearGradient>
+        </defs>
+        <path d="M 50 8 A 42 42 0 1 0 92 58 A 42 42 0 0 0 78 22" stroke="url(#ringGrad)" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M 78 22 A 42 42 0 0 1 92 58" stroke="#4DD5E5" stroke-width="16" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>Confiance Medical</h1>
+      <p>Controle de Obras · CMCE</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="db-indicator">
+      <div class="db-dot" id="dbDot"></div>
+      <span id="dbLabel">Conectado</span>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M12 16l-4-4h3V4h2v8h3l-4 4z" fill="currentColor"/><path d="M4 20h16v-4h-2v2H6v-2H4v4z" fill="currentColor"/></svg>
+      Exportar CSV
+    </button>
+    <button class="btn btn-outline btn-sm" onclick="showSetup()">⚙️ Banco de Dados</button>
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      Nova Entrada
+    </button>
+  </div>
+</header>
+
+<div class="page">
+  <div id="importBanner"></div>
+  <div class="kpi-grid" id="kpiGrid"></div>
+  <div class="charts-row" id="chartsRow"></div>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="filter-group search-wrap" style="flex:3;min-width:240px">
+      <label>Pesquisar</label>
+      <svg class="search-icon" width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="text" id="searchInput" class="input" placeholder="Fornecedor, OC, observação..." oninput="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>Tipo</label>
+      <select id="filterTipo" onchange="applyFilters()"><option value="">Todos</option><option value="Serviço">Serviço</option><option value="Produto">Produto</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Status Pgto</label>
+      <select id="filterStatus" onchange="applyFilters()"><option value="">Todos</option><option value="Pago">Pago</option><option value="Parcial">Parcial</option><option value="Pendente">Pendente</option><option value="Orçamento">Orçamento</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Fornecedor</label>
+      <select id="filterFornecedor" onchange="applyFilters()"><option value="">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Data início</label>
+      <input type="date" id="filterDateFrom" class="input" onchange="applyFilters()">
+    </div>
+    <div class="filter-group">
+      <label>Data fim</label>
+      <input type="date" id="filterDateTo" class="input" onchange="applyFilters()">
+    </div>
+    <div class="filter-group" style="justify-content:flex-end;flex-direction:row;align-items:flex-end;gap:8px;min-width:auto">
+      <button class="btn btn-ghost btn-sm" onclick="clearFilters()">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        Limpar
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-card">
+    <div class="table-header">
+      <div><span class="table-title">Ordens de Compra</span><span class="table-count" id="tableCount"></span></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('fornecedor')">Fornecedor <span id="sort-fornecedor"></span></th>
+            <th onclick="sortBy('emissao')">Emissão <span id="sort-emissao"></span></th>
+            <th onclick="sortBy('oc')">Nº OC <span id="sort-oc"></span></th>
+            <th onclick="sortBy('tipo')">Tipo <span id="sort-tipo"></span></th>
+            <th onclick="sortBy('valor')" style="text-align:right">Valor OC <span id="sort-valor"></span></th>
+            <th>Status Pgto</th>
+            <th>Observação</th>
+            <th>Comprov./NF</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot id="tableFoot"></tfoot>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<!-- MODAL ADD/EDIT -->
+<div class="modal-overlay" id="mainModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Nova Entrada</span>
+      <button class="close-btn" onclick="closeModal('mainModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field full"><label>Fornecedor <span class="required">*</span></label><input type="text" id="fFornecedor" class="input" placeholder="Nome do fornecedor / empresa"></div>
+        <div class="field"><label>Data de Emissão</label><input type="date" id="fEmissao" class="input"></div>
+        <div class="field"><label>Nº Ordem de Compra</label><input type="text" id="fOC" class="input" placeholder="Ex: 320, xx"></div>
+        <div class="field"><label>Valor Original (R$) <span class="required">*</span></label><input type="text" id="fValor" class="input" placeholder="Ex: 6.500,00"></div>
+        <div class="field"><label>Tipo <span class="required">*</span></label><select id="fTipo"><option value="Serviço">Serviço</option><option value="Produto">Produto</option></select></div>
+        <div class="field"><label>Status Pagamento</label><select id="fStatus"><option value="Pendente">Pendente</option><option value="Parcial">Parcial</option><option value="Pago">Pago</option><option value="Orçamento">Orçamento</option></select></div>
+        <div class="field"><label>Valor Pago até agora (R$)</label><input type="text" id="fValorPago" class="input" placeholder="Ex: 4.200,00"></div>
+        <div class="field"><label>Data do Pagamento</label><input type="date" id="fDataPgto" class="input"></div>
+        <div class="field full"><label>Observação</label><textarea id="fObs" placeholder="Detalhes do serviço, NFS, boletos, formas de pagamento..."></textarea></div>
+        <div class="field full"><label>Nº NF / Documento</label><input type="text" id="fNF" class="input" placeholder="Ex: NFS 23, NF 461051"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('mainModal')">Cancelar</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveEntry()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V7l-4-4z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M17 21v-8H7v8M7 3v5h8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OBS -->
+<div class="modal-overlay" id="obsModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><span class="modal-title">Observação Completa</span><button class="close-btn" onclick="closeModal('obsModal')">×</button></div>
+    <div class="modal-body"><p id="obsFullText" style="font-size:15px;line-height:1.7;color:var(--gray-700)"></p></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('obsModal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL ANEXOS -->
+<div class="modal-overlay" id="attachModal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">📎 Comprovantes & NF</span><button class="close-btn" onclick="closeModal('attachModal')">×</button></div>
+    <div class="modal-body">
+      <p id="attachFornecedorLabel" style="font-size:14px;font-weight:600;color:var(--gray-600);margin-bottom:12px"></p>
+      <div id="attachList" class="attach-list"></div>
+      <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📤</div><p>Clique para anexar arquivo</p><small>PDF, JPG, PNG, XML • até 10MB</small>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.xml" onchange="handleFileUpload(event)">
+      <p style="font-size:12px;color:var(--gray-400);margin-top:10px;font-style:italic">* Nomes dos arquivos salvos no banco. Para armazenamento dos arquivos em si, configure Supabase Storage.</p>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('attachModal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL DELETE -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header"><span class="modal-title">Confirmar Exclusão</span><button class="close-btn" onclick="closeModal('deleteModal')">×</button></div>
+    <div class="modal-body"><p style="font-size:15px;color:var(--gray-600);line-height:1.6">Deseja realmente excluir o registro de <strong id="deleteLabel"></strong>? Esta ação não pode ser desfeita.</p></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('deleteModal')">Cancelar</button><button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Excluir</button></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DADOS INICIAIS (para importar no 1º acesso)
+// ─────────────────────────────────────────────
+const INITIAL_DATA = [
+  {fornecedor:"AUTOMATIZE SERVICE",emissao:"2023-09-05",oc:"13",valor:4100,tipo:"Serviço",status:"Pago",valor_pago:4100,data_pgto:"2023-09-13",nf:"NFS 1",obs:"13/09 DEPÓSITO PIX: automatizeservice@yahoo.com.br - Conserto do portão + automação de portas",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2023-10-31",oc:"69",valor:950,tipo:"Serviço",status:"Pago",valor_pago:950,data_pgto:"2023-11-06",nf:"NFS 14",obs:"RODAPÉ CE - 7D BOLETO VENC 6/11",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-01-02",oc:"99",valor:15000,tipo:"Serviço",status:"Pago",valor_pago:15000,data_pgto:null,nf:"",obs:"Serviço drywall",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-03-12",oc:"137",valor:30360.32,tipo:"Serviço",status:"Pago",valor_pago:30360.32,data_pgto:null,nf:"NFS 30/32",obs:"ORÇ 4022024 - NFS 30 / NFS 32",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-05-06",oc:"173",valor:6500,tipo:"Serviço",status:"Pago",valor_pago:6500,data_pgto:"2024-05-09",nf:"NFS 35",obs:"BOLETO VENC. 09/05",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-05-06",oc:"174",valor:4250.29,tipo:"Serviço",status:"Pago",valor_pago:4250.29,data_pgto:"2024-05-13",nf:"NFS 36",obs:"BOLETO VENC. 13/05",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-05-31",oc:"186",valor:4250.29,tipo:"Serviço",status:"Pago",valor_pago:4250.29,data_pgto:"2024-06-13",nf:"NFS 40",obs:"BOLETO VENC. 13/06",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-07-08",oc:"198",valor:4150.27,tipo:"Serviço",status:"Pago",valor_pago:4150.27,data_pgto:"2024-07-11",nf:"NFS 43",obs:"SS 94445 - BOLETO VENC. 11/07",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-07-08",oc:"199",valor:4250.29,tipo:"Serviço",status:"Pago",valor_pago:4250.29,data_pgto:"2024-07-13",nf:"NFS 42",obs:"SS 94444 - BOLETO VENC. 13/07",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-07-23",oc:"212",valor:2341.49,tipo:"Serviço",status:"Pago",valor_pago:2341.49,data_pgto:"2024-07-25",nf:"NFS 46",obs:"SS 94555 - BOLETO VENC. 25/07",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-07-23",oc:"213",valor:10975.48,tipo:"Serviço",status:"Pago",valor_pago:10975.48,data_pgto:"2024-07-25",nf:"NFS 47",obs:"SS 94565 - BOLETO VENC. 25/07",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-08-08",oc:"219",valor:4250.29,tipo:"Serviço",status:"Pago",valor_pago:4250.29,data_pgto:"2024-08-13",nf:"NFS 48",obs:"SS 94690 - BOLETO VENC. 13/08",anexos:[]},
+  {fornecedor:"JAMILY VALENTE ALVES",emissao:"2024-08-30",oc:"228",valor:34800,tipo:"Serviço",status:"Pago",valor_pago:34800,data_pgto:null,nf:"NFS 50",obs:"SS 94857",anexos:[]},
+  {fornecedor:"NELIO FERREIRA DA SILVA",emissao:"2025-03-28",oc:"320",valor:6500,tipo:"Serviço",status:"Pago",valor_pago:6500,data_pgto:"2025-03-31",nf:"NFS 5",obs:"PAGAMENTO VIA PIX EM 31/03 - MANUTENÇÃO ELETRICA CMCE",anexos:[]},
+  {fornecedor:"FORCA POSITIVA",emissao:"2025-04-22",oc:"339",valor:6000,tipo:"Serviço",status:"Pago",valor_pago:6000,data_pgto:null,nf:"NFS 19",obs:"Manutenção Telhado CMCE - PIX 70% venc 25-04 e 30% venc 07-05",anexos:[]},
+  {fornecedor:"FORCA POSITIVA",emissao:"2025-05-09",oc:"352",valor:11000,tipo:"Serviço",status:"Pago",valor_pago:11000,data_pgto:null,nf:"NFS 23",obs:"PIX 70% venc 12-05 e 30% venc 19-05",anexos:[]},
+  {fornecedor:"FORCA POSITIVA",emissao:"2025-07-07",oc:"390",valor:2100,tipo:"Serviço",status:"Pago",valor_pago:2100,data_pgto:null,nf:"",obs:"SS 96962 Sistema de incêndio CMCE",anexos:[]},
+  {fornecedor:"MOTOR DE PORTAO",emissao:"2025-08-28",oc:"417",valor:350,tipo:"Serviço",status:"Pago",valor_pago:350,data_pgto:"2025-08-21",nf:"NFS 83",obs:"Serviço de troca das roldanas do portão da garagem da CMCE",anexos:[]},
+  {fornecedor:"FORCA POSITIVA",emissao:"2025-09-03",oc:"420",valor:23389.10,tipo:"Serviço",status:"Pago",valor_pago:23389.10,data_pgto:null,nf:"NFS 29",obs:"SS 97362 PAGAMENTOS: R$1.750 - 09/07 + R$10.500 - 12/07 + R$5.500 - 23/07 + R$5.639,10 - 29/08",anexos:[]},
+  {fornecedor:"FORCA POSITIVA",emissao:"2026-02-13",oc:"498",valor:8940,tipo:"Serviço",status:"Parcial",valor_pago:7440,data_pgto:"2026-02-10",nf:"NFS 11",obs:"SS 98599 - Pago R$7.440,00 em 10/02 - falta R$1.500,00 previsão para 30/04",anexos:[]},
+  {fornecedor:"Leandro Moreira da Silva",emissao:"2026-02-10",oc:"xx",valor:425,tipo:"Serviço",status:"Pago",valor_pago:425,data_pgto:"2026-02-10",nf:"",obs:"Serviço Extra - Restante dos 50% mão de obra instalação drywall e bebedouro/filtro na CMCE",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:null,oc:"xx",valor:5000,tipo:"Serviço",status:"Parcial",valor_pago:3500,data_pgto:"2026-02-04",nf:"",obs:"Pago R$3.500,00 (70%) em 04/02 - Manutenção da cobertura - restante após finalização",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:null,oc:"xx",valor:1488.18,tipo:"Serviço",status:"Pendente",valor_pago:0,data_pgto:null,nf:"",obs:"OBRA CE - Serviço hidráulico: R$288,18 conexões + R$1.200,00 mão de obra",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:"2025-11-10",oc:"xx",valor:11160,tipo:"Serviço",status:"Parcial",valor_pago:11160,data_pgto:null,nf:"",obs:"OBRA CE - Total R$18.600,00; 60% sinal (R$11.160,00) e 40% na entrega",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:"2025-08-29",oc:"xx",valor:5639.10,tipo:"Serviço",status:"Pago",valor_pago:5639.10,data_pgto:"2025-08-29",nf:"",obs:"OBRA CE",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:"2025-07-23",oc:"xx",valor:5500,tipo:"Serviço",status:"Pago",valor_pago:5500,data_pgto:"2025-07-23",nf:"",obs:"OBRA CE",anexos:[]},
+  {fornecedor:"Leandro Moreira da Silva",emissao:"2025-07-08",oc:"xx",valor:1750,tipo:"Serviço",status:"Pago",valor_pago:1750,data_pgto:"2025-07-08",nf:"",obs:"Material e mão de obra - cerâmica parede do banheiro",anexos:[]},
+  {fornecedor:"Leandro Moreira da Silva",emissao:"2025-06-12",oc:"xx",valor:10500,tipo:"Serviço",status:"Pago",valor_pago:10500,data_pgto:"2025-06-12",nf:"",obs:"R$10.500,00 sinal + R$10.500,00 quando finalizar - 50% referente à obra na CMCE",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:"2024-12-06",oc:"xx",valor:3120,tipo:"Serviço",status:"Pago",valor_pago:3120,data_pgto:null,nf:"",obs:"Dia 06/12: R$1.560,00 / Dia 13/12: R$1.560,00 / Dia 20/12: R$1.560,00 - mão de obra + material",anexos:[]},
+  {fornecedor:"S V COMERCIO DE MATERIAL ELETRICO",emissao:"2025-04-12",oc:"xx",valor:9211.05,tipo:"Produto",status:"Pago",valor_pago:9211.05,data_pgto:null,nf:"NF 461051",obs:"Material para obra",anexos:[]},
+  {fornecedor:"C-ART",emissao:"2024-07-23",oc:"29746",valor:1275.02,tipo:"Produto",status:"Pago",valor_pago:1275.02,data_pgto:null,nf:"NF 22895",obs:"ADITIVO PISO CMCE",anexos:[]},
+  {fornecedor:"C-ART",emissao:"2024-07-09",oc:"29627",valor:9070.67,tipo:"Produto",status:"Pago",valor_pago:9070.67,data_pgto:null,nf:"NF 22618",obs:"COMPRA DE MATERIAIS PARA OBRA DO PISO NA CMCE",anexos:[]},
+  {fornecedor:"ALMIR COSTA",emissao:"2026-05-21",oc:"xx",valor:0,tipo:"Serviço",status:"Orçamento",valor_pago:0,data_pgto:null,nf:"",obs:"Orçamento 21/05/2026 (whatsapp)",anexos:[]},
+];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+const CONFIG_KEY = 'cmce_sb_config';
+let sbClient = null;
+let data = [];
+let filtered = [];
+let editingId = null;
+let deletingId = null;
+let attachingId = null;
+let sortField = 'emissao';
+let sortDir = -1;
+let currentPage = 1;
+const PAGE_SIZE = 20;
+
+// ─────────────────────────────────────────────
+//  SUPABASE CONFIG
+// ─────────────────────────────────────────────
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(CONFIG_KEY)); } catch { return null; }
+}
+function saveConfig(url, key) {
+  localStorage.setItem(CONFIG_KEY, JSON.stringify({ url, key }));
+}
+function initClient(url, key) {
+  sbClient = supabase.createClient(url, key);
+}
+
+function showSetup() {
+  document.getElementById('setupScreen').classList.add('visible');
+  const cfg = getConfig();
+  if (cfg) { document.getElementById('sbUrl').value = cfg.url || ''; document.getElementById('sbKey').value = cfg.key || ''; }
+}
+function hideSetup() { document.getElementById('setupScreen').classList.remove('visible'); }
+
+async function connectSupabase() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const errEl = document.getElementById('setupError');
+  errEl.classList.remove('visible');
+
+  if (!url || !key) { errEl.textContent = 'Preencha a URL e a chave.'; errEl.classList.add('visible'); return; }
+  if (!url.includes('supabase.co')) { errEl.textContent = 'URL inválida. Deve ser no formato https://xxxx.supabase.co'; errEl.classList.add('visible'); return; }
+
+  showLoading('Testando conexão...');
+  try {
+    initClient(url, key);
+    // Test connection
+    const { error } = await sbClient.from('obras_cmce').select('id').limit(1);
+    if (error && error.code === '42P01') {
+      // Table doesn't exist
+      hideLoading();
+      errEl.textContent = 'Tabela "obras_cmce" não encontrada. Execute o SQL de criação no painel do Supabase.';
+      errEl.classList.add('visible');
+      return;
+    }
+    if (error && error.code !== 'PGRST116') throw error;
+
+    saveConfig(url, key);
+    hideSetup();
+    setDbOnline(true);
+    await loadAndRender();
+  } catch (e) {
+    hideLoading();
+    errEl.textContent = 'Erro de conexão: ' + e.message;
+    errEl.classList.add('visible');
+  }
+}
+
+// ─────────────────────────────────────────────
+//  DB OPERATIONS
+// ─────────────────────────────────────────────
+function dbToApp(row) {
+  return {
+    id: row.id,
+    fornecedor: row.fornecedor || '',
+    emissao: row.emissao || '',
+    oc: row.oc || '',
+    valor: Number(row.valor) || 0,
+    tipo: row.tipo || 'Serviço',
+    status: row.status || 'Pendente',
+    valorPago: Number(row.valor_pago) || 0,
+    dataPgto: row.data_pgto || '',
+    obs: row.obs || '',
+    nf: row.nf || '',
+    anexos: row.anexos || [],
+  };
+}
+
+function appToDB(e) {
+  return {
+    fornecedor: e.fornecedor,
+    emissao: e.emissao || null,
+    oc: e.oc || null,
+    valor: e.valor || 0,
+    tipo: e.tipo || 'Serviço',
+    status: e.status || 'Pendente',
+    valor_pago: e.valorPago || 0,
+    data_pgto: e.dataPgto || null,
+    obs: e.obs || null,
+    nf: e.nf || null,
+    anexos: e.anexos || [],
+  };
+}
+
+async function dbLoad() {
+  const { data: rows, error } = await sbClient.from('obras_cmce').select('*').order('id', { ascending: true });
+  if (error) throw error;
+  return rows.map(dbToApp);
+}
+
+async function dbInsert(entry) {
+  const { data: rows, error } = await sbClient.from('obras_cmce').insert([appToDB(entry)]).select();
+  if (error) throw error;
+  return dbToApp(rows[0]);
+}
+
+async function dbUpdate(id, entry) {
+  const { data: rows, error } = await sbClient.from('obras_cmce').update(appToDB(entry)).eq('id', id).select();
+  if (error) throw error;
+  return dbToApp(rows[0]);
+}
+
+async function dbDelete(id) {
+  const { error } = await sbClient.from('obras_cmce').delete().eq('id', id);
+  if (error) throw error;
+}
+
+async function dbUpdateField(id, fields) {
+  const { error } = await sbClient.from('obras_cmce').update(fields).eq('id', id);
+  if (error) throw error;
+}
+
+async function dbImportAll() {
+  const { error } = await sbClient.from('obras_cmce').insert(INITIAL_DATA);
+  if (error) throw error;
+}
+
+// ─────────────────────────────────────────────
+//  LOADING / UI STATE
+// ─────────────────────────────────────────────
+function showLoading(msg = 'Carregando...') {
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('loadingOverlay').classList.add('visible');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('visible'); }
+
+function setDbOnline(online) {
+  document.getElementById('dbDot').className = 'db-dot' + (online ? '' : ' offline');
+  document.getElementById('dbLabel').textContent = online ? 'Conectado' : 'Sem conexão';
+}
+
+// ─────────────────────────────────────────────
+//  LOAD AND RENDER
+// ─────────────────────────────────────────────
+async function loadAndRender() {
+  showLoading('Carregando dados...');
+  try {
+    data = await dbLoad();
+    setDbOnline(true);
+    if (data.length === 0) showImportBanner();
+    else hideImportBanner();
+    populateFornecedorFilter();
+    renderKPIs();
+    renderCharts();
+    applyFilters();
+    updateSortIcons();
+  } catch (e) {
+    setDbOnline(false);
+    toast('Erro ao carregar: ' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+function showImportBanner() {
+  document.getElementById('importBanner').innerHTML = `
+    <div class="import-banner">
+      <div>
+        <p>🗄️ Banco de dados vazio</p>
+        <small>Importe os dados históricos da planilha CMCE para começar</small>
+      </div>
+      <button class="btn btn-primary" id="importBtn" onclick="importarDados()">
+        ⬆️ Importar 33 registros históricos
+      </button>
+    </div>`;
+}
+function hideImportBanner() { document.getElementById('importBanner').innerHTML = ''; }
+
+async function importarDados() {
+  document.getElementById('importBtn').disabled = true;
+  showLoading('Importando dados históricos...');
+  try {
+    await dbImportAll();
+    data = await dbLoad();
+    hideImportBanner();
+    populateFornecedorFilter();
+    renderKPIs();
+    renderCharts();
+    applyFilters();
+    toast('33 registros importados com sucesso!', 'success');
+  } catch (e) {
+    toast('Erro na importação: ' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────
+function fmtMoney(v) {
+  if (v === null || v === undefined || v === '' || isNaN(v)) return '—';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function parseMoney(s) {
+  if (!s) return 0;
+  return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const parts = d.split('-');
+  if (parts.length !== 3) return d;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+function highlight(text, term) {
+  if (!term || !text) return text || '';
+  const esc = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return String(text).replace(new RegExp(esc, 'gi'), m => `<mark>${m}</mark>`);
+}
+function getFileIcon(name) {
+  if (!name) return '📄';
+  const ext = name.split('.').pop().toLowerCase();
+  if (['jpg','jpeg','png','gif'].includes(ext)) return '🖼️';
+  if (ext === 'pdf') return '📕';
+  if (ext === 'xml') return '📋';
+  return '📄';
+}
+function getStatusStyle(s) {
+  const m = { Pago:'background:#E8F5EE;color:#1AA053;border-color:#1AA053', Parcial:'background:#FFF3E0;color:#E67E00;border-color:#E67E00', Pendente:'background:#FDECEA;color:#C0392B;border-color:#C0392B', Orçamento:'background:#F1F5F9;color:#64748B;border-color:#CBD5E1' };
+  return m[s] || '';
+}
+function esc(s) { return String(s||'').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+
+// ─────────────────────────────────────────────
+//  RENDER KPIs
+// ─────────────────────────────────────────────
+function renderKPIs() {
+  const total = data.reduce((s,d)=>s+(d.valor||0),0);
+  const totalPago = data.reduce((s,d)=>s+(d.valorPago||0),0);
+  const totalPendente = data.reduce((s,d)=>{
+    if(d.status==='Pendente') return s+(d.valor||0);
+    if(d.status==='Parcial') return s+((d.valor||0)-(d.valorPago||0));
+    return s;
+  },0);
+  const servicos = data.filter(d=>d.tipo==='Serviço').reduce((s,d)=>s+(d.valor||0),0);
+  const produtos = data.filter(d=>d.tipo==='Produto').reduce((s,d)=>s+(d.valor||0),0);
+  const fornecedores = new Set(data.map(d=>d.fornecedor)).size;
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card"><div class="kpi-icon blue">💰</div><div class="kpi-content"><div class="kpi-label">Total Geral (OCs)</div><div class="kpi-value">${fmtMoney(total)}</div><div class="kpi-sub">${data.length} registros</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon green">✅</div><div class="kpi-content"><div class="kpi-label">Total Pago</div><div class="kpi-value">${fmtMoney(totalPago)}</div><div class="kpi-sub">${data.filter(d=>d.status==='Pago').length} quitadas</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon red">⏳</div><div class="kpi-content"><div class="kpi-label">A Pagar</div><div class="kpi-value">${fmtMoney(totalPendente)}</div><div class="kpi-sub">${data.filter(d=>d.status==='Pendente'||d.status==='Parcial').length} em aberto</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon blue">🔧</div><div class="kpi-content"><div class="kpi-label">Serviços</div><div class="kpi-value">${fmtMoney(servicos)}</div><div class="kpi-sub">${data.filter(d=>d.tipo==='Serviço').length} OCs</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon purple">📦</div><div class="kpi-content"><div class="kpi-label">Produtos/Material</div><div class="kpi-value">${fmtMoney(produtos)}</div><div class="kpi-sub">${data.filter(d=>d.tipo==='Produto').length} OCs</div></div></div>
+    <div class="kpi-card"><div class="kpi-icon orange">🏢</div><div class="kpi-content"><div class="kpi-label">Fornecedores</div><div class="kpi-value">${fornecedores}</div><div class="kpi-sub">empresas/pessoas</div></div></div>`;
+}
+
+// ─────────────────────────────────────────────
+//  RENDER CHARTS
+// ─────────────────────────────────────────────
+function renderCharts() {
+  const byForn = {};
+  data.forEach(d => { const k = d.fornecedor.split(' ').slice(0,3).join(' '); byForn[k]=(byForn[k]||0)+(d.valor||0); });
+  const topForn = Object.entries(byForn).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxForn = topForn[0]?.[1]||1;
+  const barsHtml = topForn.map(([n,v])=>`<div class="bar-row"><div class="bar-label" title="${n}">${n}</div><div class="bar-track"><div class="bar-fill" style="width:${(v/maxForn*100).toFixed(1)}%"></div></div><div class="bar-val">${fmtMoney(v)}</div></div>`).join('');
+
+  const sCount={Pago:0,Parcial:0,Pendente:0,Orçamento:0};
+  data.forEach(d=>{sCount[d.status]=(sCount[d.status]||0)+1;});
+  const total = data.length||1;
+  const colors={Pago:'#1AA053',Parcial:'#E67E00',Pendente:'#C0392B',Orçamento:'#94A3B8'};
+  let cum=-Math.PI/2; const r=55,cx=65,cy=65;
+  let paths='';
+  Object.entries(sCount).forEach(([s,c])=>{
+    if(!c)return;
+    const a=(c/total)*2*Math.PI, x1=cx+r*Math.cos(cum), y1=cy+r*Math.sin(cum);
+    cum+=a;
+    const x2=cx+r*Math.cos(cum),y2=cy+r*Math.sin(cum),la=a>Math.PI?1:0;
+    paths+=`<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${la},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${colors[s]}" opacity="0.9"/>`;
+  });
+  const legendHtml=Object.entries(sCount).filter(([,v])=>v>0).map(([s,c])=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[s]}"></div><span>${s}: <strong>${c}</strong></span></div>`).join('');
+
+  document.getElementById('chartsRow').innerHTML = `
+    <div class="chart-card"><div class="chart-title">💼 Top Fornecedores por Valor</div><div class="bar-chart">${barsHtml}</div></div>
+    <div class="chart-card"><div class="chart-title">💳 Status de Pagamento</div>
+      <div class="pie-row">
+        <svg width="130" height="130" viewBox="0 0 130 130">${paths}<circle cx="${cx}" cy="${cy}" r="26" fill="white"/><text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">${data.length}</text><text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="9" fill="#94A3B8">OCs</text></svg>
+        <div class="pie-legend">${legendHtml}</div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+//  FILTERS & SORT
+// ─────────────────────────────────────────────
+function populateFornecedorFilter() {
+  const sel=document.getElementById('filterFornecedor'), cur=sel.value;
+  const list=[...new Set(data.map(d=>d.fornecedor))].sort();
+  sel.innerHTML='<option value="">Todos</option>'+list.map(f=>`<option value="${f}"${f===cur?' selected':''}>${f}</option>`).join('');
+}
+function applyFilters() {
+  const search=document.getElementById('searchInput').value.toLowerCase().trim();
+  const tipo=document.getElementById('filterTipo').value;
+  const status=document.getElementById('filterStatus').value;
+  const forn=document.getElementById('filterFornecedor').value;
+  const df=document.getElementById('filterDateFrom').value;
+  const dt=document.getElementById('filterDateTo').value;
+  filtered=data.filter(d=>{
+    if(tipo&&d.tipo!==tipo)return false;
+    if(status&&d.status!==status)return false;
+    if(forn&&d.fornecedor!==forn)return false;
+    if(df&&d.emissao&&d.emissao<df)return false;
+    if(dt&&d.emissao&&d.emissao>dt)return false;
+    if(search){const t=[d.fornecedor,d.oc,d.obs,d.nf].join(' ').toLowerCase();if(!t.includes(search))return false;}
+    return true;
+  });
+  sortFiltered(); currentPage=1; renderTable();
+}
+function clearFilters(){
+  ['searchInput','filterTipo','filterStatus','filterFornecedor','filterDateFrom','filterDateTo'].forEach(id=>{document.getElementById(id).value='';});
+  applyFilters();
+}
+function sortBy(field){
+  if(sortField===field)sortDir*=-1;else{sortField=field;sortDir=1;}
+  sortFiltered();renderTable();updateSortIcons();
+}
+function sortFiltered(){
+  filtered.sort((a,b)=>{
+    if(sortField==='valor')return sortDir*(a.valor-b.valor);
+    let va,vb;
+    if(sortField==='fornecedor'){va=a.fornecedor;vb=b.fornecedor;}
+    else if(sortField==='emissao'){va=a.emissao||'';vb=b.emissao||'';}
+    else if(sortField==='oc'){va=a.oc;vb=b.oc;}
+    else if(sortField==='tipo'){va=a.tipo;vb=b.tipo;}
+    else return 0;
+    return sortDir*String(va).localeCompare(String(vb));
+  });
+}
+function updateSortIcons(){
+  ['fornecedor','emissao','oc','tipo','valor'].forEach(f=>{
+    const el=document.getElementById('sort-'+f);
+    if(el)el.textContent=sortField===f?(sortDir===1?' ↑':' ↓'):'';
+  });
+}
+
+// ─────────────────────────────────────────────
+//  RENDER TABLE
+// ─────────────────────────────────────────────
+function renderTable(){
+  const term=document.getElementById('searchInput').value.trim();
+  const start=(currentPage-1)*PAGE_SIZE;
+  const page=filtered.slice(start,start+PAGE_SIZE);
+  document.getElementById('tableCount').textContent=`(${filtered.length} ${filtered.length===1?'registro':'registros'})`;
+
+  if(!page.length){
+    document.getElementById('tableBody').innerHTML=`<tr><td colspan="9"><div class="empty-state"><div class="emoji">🔍</div><p>Nenhum registro encontrado.</p></div></td></tr>`;
+    document.getElementById('tableFoot').innerHTML='';
+    renderPagination();return;
+  }
+
+  document.getElementById('tableBody').innerHTML=page.map(d=>{
+    const hasA=d.anexos&&d.anexos.length>0;
+    return `<tr>
+      <td><div class="fornecedor-name">${highlight(d.fornecedor,term)}</div>${d.nf?`<div class="fornecedor-sub">${highlight(d.nf,term)}</div>`:''}</td>
+      <td class="date-cell">${fmtDate(d.emissao)}</td>
+      <td class="oc-number">${highlight(d.oc||'—',term)}</td>
+      <td><span class="badge ${d.tipo==='Serviço'?'badge-servico':'badge-produto'}">${d.tipo}</span></td>
+      <td style="text-align:right"><span class="valor">${d.valor?fmtMoney(d.valor):'—'}</span>
+        ${d.status==='Parcial'&&d.valorPago?`<div style="font-size:11px;color:var(--warning);font-weight:600">Pago: ${fmtMoney(d.valorPago)}</div><div style="font-size:11px;color:var(--danger)">Resta: ${fmtMoney((d.valor||0)-(d.valorPago||0))}</div>`:''}
+      </td>
+      <td><select class="status-select" onchange="updateStatus(${d.id},this.value)" style="${getStatusStyle(d.status)}">
+        <option value="Pendente"${d.status==='Pendente'?' selected':''}>○ Pendente</option>
+        <option value="Parcial"${d.status==='Parcial'?' selected':''}>◑ Parcial</option>
+        <option value="Pago"${d.status==='Pago'?' selected':''}>✓ Pago</option>
+        <option value="Orçamento"${d.status==='Orçamento'?' selected':''}>📋 Orçamento</option>
+      </select></td>
+      <td class="obs-cell" onclick="showObs('${esc(d.obs)}')" title="Clique para ver completo">${highlight(String(d.obs||'').substring(0,70),term)}${(d.obs||'').length>70?'…':''}</td>
+      <td><button class="btn-row attach${hasA?' has-attach':''}" onclick="openAttach(${d.id})" title="Comprovantes & NF">📎${hasA?`<span class="attach-dot"></span>`:''}</button>${hasA?`<span style="font-size:11px;color:var(--success);font-weight:600;margin-left:2px">${d.anexos.length}</span>`:''}</td>
+      <td><div class="actions-cell"><button class="btn-row edit" onclick="openModal(${d.id})" title="Editar">✏️</button><button class="btn-row del" onclick="openDelete(${d.id})" title="Excluir">🗑️</button></div></td>
+    </tr>`;
+  }).join('');
+
+  const tf=filtered.reduce((s,d)=>s+(d.valor||0),0);
+  const tp=filtered.reduce((s,d)=>s+(d.valorPago||0),0);
+  document.getElementById('tableFoot').innerHTML=`<tr class="totals-row"><td colspan="4" style="text-align:right;font-size:13px;color:var(--gray-500)">TOTAL (${filtered.length} registros)</td><td style="text-align:right">${fmtMoney(tf)}<div style="font-size:11px;color:var(--success);font-weight:600">Pago: ${fmtMoney(tp)}</div></td><td colspan="4"></td></tr>`;
+  renderPagination();
+}
+
+function renderPagination(){
+  const total=Math.ceil(filtered.length/PAGE_SIZE);
+  const c=document.getElementById('pagination');
+  if(total<=1){c.innerHTML='';return;}
+  const s=(currentPage-1)*PAGE_SIZE+1, e=Math.min(currentPage*PAGE_SIZE,filtered.length);
+  let btns=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for(let i=1;i<=total;i++){
+    if(i===1||i===total||Math.abs(i-currentPage)<=1)btns+=`<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    else if(Math.abs(i-currentPage)===2)btns+=`<span style="padding:0 4px;color:var(--gray-400)">…</span>`;
+  }
+  btns+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>›</button>`;
+  c.innerHTML=`<span class="page-info">Mostrando ${s}–${e} de ${filtered.length}</span><div class="page-btns">${btns}</div>`;
+}
+function goPage(p){
+  const t=Math.ceil(filtered.length/PAGE_SIZE);
+  if(p<1||p>t)return;
+  currentPage=p;renderTable();window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ─────────────────────────────────────────────
+//  STATUS UPDATE
+// ─────────────────────────────────────────────
+async function updateStatus(id, status){
+  try {
+    await dbUpdateField(id, { status });
+    const entry=data.find(d=>d.id===id);
+    if(entry)entry.status=status;
+    renderKPIs();renderCharts();applyFilters();
+    toast('Status atualizado: '+status,'success');
+  } catch(e){ toast('Erro: '+e.message,'error'); }
+}
+
+// ─────────────────────────────────────────────
+//  MODAL ADD/EDIT
+// ─────────────────────────────────────────────
+function openModal(id=null){
+  editingId=id;
+  document.getElementById('modalTitle').textContent=id?'Editar Registro':'Nova Entrada';
+  if(id){
+    const d=data.find(x=>x.id===id);if(!d)return;
+    document.getElementById('fFornecedor').value=d.fornecedor||'';
+    document.getElementById('fEmissao').value=d.emissao||'';
+    document.getElementById('fOC').value=d.oc||'';
+    document.getElementById('fValor').value=d.valor?d.valor.toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
+    document.getElementById('fTipo').value=d.tipo||'Serviço';
+    document.getElementById('fStatus').value=d.status||'Pendente';
+    document.getElementById('fValorPago').value=d.valorPago?d.valorPago.toLocaleString('pt-BR',{minimumFractionDigits:2}):'';
+    document.getElementById('fDataPgto').value=d.dataPgto||'';
+    document.getElementById('fObs').value=d.obs||'';
+    document.getElementById('fNF').value=d.nf||'';
+  } else {
+    ['fFornecedor','fOC','fValor','fValorPago','fObs','fNF'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fEmissao').value=new Date().toISOString().split('T')[0];
+    document.getElementById('fTipo').value='Serviço';
+    document.getElementById('fStatus').value='Pendente';
+    document.getElementById('fDataPgto').value='';
+  }
+  document.getElementById('mainModal').classList.add('open');
+  setTimeout(()=>document.getElementById('fFornecedor').focus(),100);
+}
+
+async function saveEntry(){
+  const fornecedor=document.getElementById('fFornecedor').value.trim();
+  if(!fornecedor){toast('Informe o fornecedor','error');return;}
+  const btn=document.getElementById('saveBtn');btn.disabled=true;
+
+  const entry={
+    fornecedor,
+    emissao:document.getElementById('fEmissao').value||null,
+    oc:document.getElementById('fOC').value.trim()||'xx',
+    valor:parseMoney(document.getElementById('fValor').value),
+    tipo:document.getElementById('fTipo').value,
+    status:document.getElementById('fStatus').value,
+    valorPago:parseMoney(document.getElementById('fValorPago').value),
+    dataPgto:document.getElementById('fDataPgto').value||null,
+    obs:document.getElementById('fObs').value.trim(),
+    nf:document.getElementById('fNF').value.trim(),
+    anexos:editingId?(data.find(d=>d.id===editingId)?.anexos||[]):[],
+  };
+
+  try {
+    if(editingId){
+      const updated=await dbUpdate(editingId,entry);
+      const idx=data.findIndex(d=>d.id===editingId);
+      if(idx>=0)data[idx]=updated;
+      toast('Registro atualizado!','success');
+    } else {
+      const created=await dbInsert(entry);
+      data.unshift(created);
+      toast('Nova entrada adicionada!','success');
+    }
+    closeModal('mainModal');
+    populateFornecedorFilter();renderKPIs();renderCharts();applyFilters();
+  } catch(e){ toast('Erro ao salvar: '+e.message,'error');
+  } finally { btn.disabled=false; }
+}
+
+// ─────────────────────────────────────────────
+//  DELETE
+// ─────────────────────────────────────────────
+function openDelete(id){
+  deletingId=id;
+  const d=data.find(x=>x.id===id);
+  document.getElementById('deleteLabel').textContent=d?d.fornecedor:'';
+  document.getElementById('deleteModal').classList.add('open');
+}
+async function confirmDelete(){
+  const btn=document.getElementById('confirmDeleteBtn');btn.disabled=true;
+  try {
+    await dbDelete(deletingId);
+    data=data.filter(d=>d.id!==deletingId);
+    closeModal('deleteModal');
+    populateFornecedorFilter();renderKPIs();renderCharts();applyFilters();
+    toast('Registro excluído','');
+  } catch(e){ toast('Erro: '+e.message,'error');
+  } finally { btn.disabled=false; deletingId=null; }
+}
+
+// ─────────────────────────────────────────────
+//  OBS MODAL
+// ─────────────────────────────────────────────
+function showObs(text){ document.getElementById('obsFullText').textContent=text||'Sem observações.'; document.getElementById('obsModal').classList.add('open'); }
+
+// ─────────────────────────────────────────────
+//  ATTACHMENTS
+// ─────────────────────────────────────────────
+function openAttach(id){
+  attachingId=id;const d=data.find(x=>x.id===id);if(!d)return;
+  document.getElementById('attachFornecedorLabel').textContent=`${d.fornecedor}${d.obs?' — '+d.obs.substring(0,50)+'…':''}`;
+  renderAttachList(d);document.getElementById('attachModal').classList.add('open');
+}
+function renderAttachList(d){
+  const list=document.getElementById('attachList');
+  if(!d.anexos||!d.anexos.length){list.innerHTML=`<p style="font-size:13px;color:var(--gray-400);text-align:center;padding:16px">Nenhum comprovante anexado.</p>`;return;}
+  list.innerHTML=d.anexos.map((a,i)=>`<div class="attach-item"><span class="attach-icon">${getFileIcon(a.name)}</span><div><div class="attach-name">${a.name}</div><div class="attach-date">Adicionado em ${a.date}</div></div><button class="btn btn-ghost btn-sm attach-remove" onclick="removeAttach(${d.id},${i})">🗑️ Remover</button></div>`).join('');
+}
+async function handleFileUpload(e){
+  const file=e.target.files[0];if(!file)return;
+  if(file.size>10*1024*1024){toast('Arquivo muito grande (máx 10MB)','error');return;}
+  const d=data.find(x=>x.id===attachingId);if(!d)return;
+  if(!d.anexos)d.anexos=[];
+  d.anexos.push({name:file.name,date:new Date().toLocaleDateString('pt-BR'),size:file.size});
+  try {
+    await dbUpdateField(attachingId,{anexos:d.anexos});
+    renderAttachList(d);renderTable();
+    toast(`${file.name} adicionado!`,'success');
+  } catch(er){ toast('Erro: '+er.message,'error'); }
+  e.target.value='';
+}
+async function removeAttach(id,idx){
+  const d=data.find(x=>x.id===id);if(!d)return;
+  d.anexos.splice(idx,1);
+  try {
+    await dbUpdateField(id,{anexos:d.anexos});
+    renderAttachList(d);renderTable();toast('Anexo removido','');
+  } catch(e){toast('Erro: '+e.message,'error');}
+}
+
+// ─────────────────────────────────────────────
+//  EXPORT CSV
+// ─────────────────────────────────────────────
+function exportCSV(){
+  const headers=['Fornecedor','Emissão','Nº OC','Tipo','Valor OC','Status Pgto','Valor Pago','Data Pgto','NF/Doc','Observação'];
+  const rows=filtered.map(d=>[`"${d.fornecedor}"`,fmtDate(d.emissao),d.oc,d.tipo,(d.valor||0).toFixed(2).replace('.',','),d.status,(d.valorPago||0).toFixed(2).replace('.',','),fmtDate(d.dataPgto),`"${d.nf||''}"`,`"${(d.obs||'').replace(/"/g,'""')}"`]);
+  const csv=[headers.join(';'),...rows.map(r=>r.join(';'))].join('\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`obras-cmce-${new Date().toISOString().split('T')[0]}.csv`;a.click();URL.revokeObjectURL(url);
+  toast('CSV exportado!','success');
+}
+
+// ─────────────────────────────────────────────
+//  MODAL HELPERS
+// ─────────────────────────────────────────────
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') ['mainModal','obsModal','attachModal','deleteModal'].forEach(id=>closeModal(id));
+  if((e.ctrlKey||e.metaKey)&&e.key==='n'){e.preventDefault();openModal();}
+});
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ─────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────
+function toast(msg,type=''){
+  const c=document.getElementById('toastContainer');const t=document.createElement('div');
+  t.className=`toast ${type}`;t.textContent=msg;c.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+async function init(){
+  const cfg=getConfig();
+  if(!cfg){ showSetup(); return; }
+  initClient(cfg.url,cfg.key);
+  await loadAndRender();
+}
+
+init();
+</script>
+</body>
+</html>
